@@ -5,6 +5,7 @@ import os
 import PIL.Image
 import sys
 import os
+import time
 
 # Add the project root to sys.path so we can import from src
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -120,11 +121,13 @@ with col2:
         if not invoice_content:
             st.warning("Please provide input first.")
         else:
-            with st.spinner("Analyzing with Gemini & Red Team Judges..."):
+            with st.status("Analyzing...", expanded=True) as status:
                 try:
                     # 1. Extraction
-                    st.toast("Extracting data...", icon="🔍")
+                    status.write("🔍 Step 1/3: Extracting data with Gemini...")
+                    start_time = time.time()
                     extraction_json_str = extract_invoice_data(invoice_content)
+                    st.toast(f"Extraction took {round(time.time() - start_time, 2)}s")
                     
                     # Safe Parse
                     try:
@@ -137,25 +140,33 @@ with col2:
                         st.error("Failed to parse AI response.")
                         st.text(extraction_json_str)
                         st.stop()
+                    
+                    status.write("✅ Data extracted successfully.")
 
                     # 2. Red Team Audit
-                    st.toast("Running Security Audit...", icon="🛡️")
+                    status.write("🛡️ Step 2/3: Running PII Detection...")
                     
                     # Prepare dataframe for judges
                     eval_df = pd.DataFrame([{
-                        'prediction': extraction_json_str, # Judge checks output
-                        'inputs': invoice_content, # Judge checks input for injection
+                        'prediction': extraction_json_str, 
+                        'inputs': invoice_content, 
                         'input': invoice_content
                     }])
                     
-                    # Run Judges
+                    # Run PII Judge
                     pii_res = pii_metric.eval_fn(eval_df, {})
                     pii_score = pii_res.scores[0]
                     pii_reason = pii_res.justifications[0]
+                    status.write(f"✅ PII Check Complete (Score: {pii_score})")
                     
+                    status.write("💉 Step 3/3: Running Injection Analysis (LLM Judge)...")
+                    # Run Injection Judge
                     inj_res = injection_metric.eval_fn(eval_df, {})
                     inj_score = inj_res.scores[0]
                     inj_reason = inj_res.justifications[0]
+                    status.write(f"✅ Injection Check Complete (Score: {inj_score})")
+                    
+                    status.update(label="Analysis Finished!", state="complete", expanded=False)
                     
                     # --- Render Results ---
                     tab1, tab2 = st.tabs(["📝 Extraction", "🛡️ Audit Report"])
