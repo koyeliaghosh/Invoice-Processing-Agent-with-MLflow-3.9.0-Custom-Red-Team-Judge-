@@ -3,6 +3,12 @@ import pandas as pd
 import json
 import os
 import PIL.Image
+import sys
+import os
+
+# Add the project root to sys.path so we can import from src
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+
 from src.extraction_agent import extract_invoice_data  # Using backend utility directly
 from src.red_team_judges import pii_metric, injection_metric
 from mlflow.metrics import MetricValue
