@@ -1,8 +1,7 @@
+import google.generativeai as genai
 import time
 import os
 import logging
-import json
-import google.generativeai as genai
 from typing import List, Optional, Any
 
 # Configure Logging
@@ -75,7 +74,11 @@ def generate_content_safe(
                             
         except Exception as e:
             logger.error(f"Failed all retries for model {model_name}. Reason: {e}")
+            last_exception = e # Store the last exception from this block too
             continue # Try next model in the list
             
-    logger.error("All models failed to generate content.")
+    error_msg = "All models failed to generate content."
+    if last_exception:
+        error_msg += f" Last error: {str(last_exception)}"
+    logger.error(error_msg)
     return None
