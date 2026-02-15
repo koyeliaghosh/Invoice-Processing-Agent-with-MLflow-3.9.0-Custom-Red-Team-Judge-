@@ -81,11 +81,34 @@ with col1:
         invoice_content = st.text_area("Paste Invoice Text:", height=300, 
             placeholder="Invoice #1001\nVendor: SafeTech\nTotal: $500...")
     else:
-        uploaded_file = st.file_uploader("Upload Invoice Image", type=["png", "jpg", "jpeg"])
+        uploaded_file = st.file_uploader("Upload Invoice (PDF or Image)", type=["png", "jpg", "jpeg", "pdf"])
+        
         if uploaded_file is not None:
-            image = PIL.Image.open(uploaded_file)
-            st.image(image, caption="Uploaded Invoice", use_column_width=True)
-            invoice_content = image
+            # Handle PDF (Convert first page to image)
+            if uploaded_file.type == "application/pdf":
+                try:
+                    import pypdfium2 as pdfium
+                    
+                    pdf = pdfium.PdfDocument(uploaded_file)
+                    page = pdf[0] # Get first page
+                    bitmap = page.render(scale=2) # Render 2x for better quality
+                    pil_image = bitmap.to_pil()
+                    
+                    # Store for processing
+                    image = pil_image
+                    invoice_content = image
+                    
+                    st.image(image, caption="PDF Preview (Page 1)", use_column_width=True)
+                    st.success("Converted PDF page to image for analysis.")
+                    
+                except Exception as pdf_err:
+                    st.error(f"Failed to read PDF: {pdf_err}")
+            
+            # Handle Standard Images
+            else:
+                image = PIL.Image.open(uploaded_file)
+                st.image(image, caption="Uploaded Invoice", use_column_width=True)
+                invoice_content = image
 
     analyze_btn = st.button("Analyze & Audit 🚀", type="primary", use_container_width=True)
 
