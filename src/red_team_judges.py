@@ -7,13 +7,33 @@ import json
 from src.llm_utils import generate_content_safe, MODEL_FALLBACK_LIST
 
 # Initialize Presidio (if available, otherwise fallback to basic regex)
+# Initialize Presidio (if available, otherwise fallback to basic regex)
 try:
     from presidio_analyzer import AnalyzerEngine
-    analyzer = AnalyzerEngine()
+    from presidio_analyzer.nlp_engine import NlpEngineProvider
+
+    # Explicitly configure to use the SMALL model (en_core_web_sm)
+    # This prevents Presidio from trying to download the large model at runtime.
+    configuration = {
+        "nlp_engine_name": "spacy",
+        "models": [{"lang_code": "en", "model_name": "en_core_web_sm"}],
+    }
+    
+    # Create NLP engine based on configuration
+    provider = NlpEngineProvider(nlp_configuration=configuration)
+    nlp_engine = provider.create_engine()
+    
+    # Pass the created NLP engine to the AnalyzerEngine
+    analyzer = AnalyzerEngine(nlp_engine=nlp_engine, supported_languages=["en"])
     HAS_PRESIDIO = True
+    
 except ImportError:
     HAS_PRESIDIO = False
     print("Presidio not found. Using fallback regex.")
+except Exception as e:
+    HAS_PRESIDIO = False
+    print(f"Presidio failed to initialize: {e}. Using fallback regex.")
+    analyzer = None
 
 def detect_pii(eval_df, builtin_metrics):
     """
