@@ -63,7 +63,14 @@ with st.sidebar:
     **Google AI Powered Agent**
     This app uses **Gemini 2.0 Flash** to extract invoice data and Red Team Judges to audit for security risks.
     """)
-    st.caption("v1.0.0 | Production Ready")
+    st.caption("v1.0.1 | Production Ready")
+    
+    # Debug Info
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if api_key:
+        st.success(f"API Key Loaded: {api_key[:4]}...{api_key[-4:]}")
+    else:
+        st.error("API Key NOT Found!")
 
 # --- Main App ---
 st.title("Streamlit Invoice Agent")
