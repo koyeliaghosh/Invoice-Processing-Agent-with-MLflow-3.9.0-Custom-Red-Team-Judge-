@@ -1,0 +1,81 @@
+import time
+import os
+import logging
+import json
+import google.generativeai as genai
+from typing import List, Optional, Any
+
+# Configure Logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
+# Constants
+MAX_RETRIES = 5
+BASE_DELAY = 4 # Seconds
+BACKOFF_FACTOR = 2
+
+# Configuration
+genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
+
+# Fallback Model List - Order of preference (Efficiency -> Power)
+# We start with Flash for speed/cost, fallback to others if needed.
+# Or we can prefer the most stable one.
+MODEL_FALLBACK_LIST = [
+    'gemini-2.0-flash',
+    'gemini-2.5-flash',
+    'gemini-1.5-flash'
+]
+
+def generate_content_safe(
+    prompt: Any, 
+    system_instruction: Optional[str] = None,
+    json_mode: bool = False,
+    model_list: List[str] = MODEL_FALLBACK_LIST
+) -> Optional[str]:
+    """
+    Generates content using Google Gemini with robust error handling:
+    1. Rate Limit Handling (429): Exponential backoff.
+    2. Model Fallback: Tries alternative models if the primary fails or is overloaded.
+    3. Production Ready: Logging, error safety.
+    """
+    
+    generation_config = {}
+    if json_mode:
+        generation_config["response_mime_type"] = "application/json"
+
+    for model_name in model_list:
+        logger.info(f"Attempting generation with model: {model_name}")
+        
+        try:
+            model = genai.GenerativeModel(model_name, system_instruction=system_instruction)
+            
+            # Retry Loop for specific model
+            for attempt in range(MAX_RETRIES):
+                try:
+                    response = model.generate_content(prompt, generation_config=generation_config)
+                    return response.text
+                except Exception as e:
+                    error_str = str(e)
+                    is_rate_limit = "429" in error_str or "Resource has been exhausted" in error_str
+                    
+                    if is_rate_limit:
+                        delay = BASE_DELAY * (BACKOFF_FACTOR ** attempt)
+                        logger.warning(f"Rate limit hit for {model_name} (Attempt {attempt+1}/{MAX_RETRIES}). Retrying in {delay}s...")
+                        time.sleep(delay)
+                    else:
+                        # If it's not a rate limit (e.g. 400 Bad Request), maybe don't retry this model indefinitely?
+                        # But for stability, we might treat 500s or 503s as retriable too.
+                        # For now, let's assume random server errors could be transient.
+                        logger.error(f"Error with {model_name}: {e}")
+                        if attempt < MAX_RETRIES - 1:
+                            delay = BASE_DELAY
+                            time.sleep(delay)
+                        else:
+                            raise e # Move to next model if max retries hit
+                            
+        except Exception as e:
+            logger.error(f"Failed all retries for model {model_name}. Reason: {e}")
+            continue # Try next model in the list
+            
+    logger.error("All models failed to generate content.")
+    return None

@@ -1,0 +1,12 @@
+mlflow
+google-generativeai
+pandas
+pydantic
+python-dotenv
+presidio-analyzer
+faker
+spacy
+flask
+gunicorn
+streamlit
+Pillow

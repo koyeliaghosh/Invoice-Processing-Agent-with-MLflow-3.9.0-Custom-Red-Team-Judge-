@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice Agent | Red Team Judge</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="stylesheet" href="/static/upload.css">
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div class="glass-container">
+        <header>
+            <div class="logo">
+                <i class="fas fa-shield-alt"></i> Invoice<span class="highlight">Guard</span>
+            </div>
+            <div class="status-indicator">
+                <span class="status-dot online"></span> System Active
+            </div>
+        </header>
+
+        <main>
+            <section class="input-section">
+                <h2><i class="fas fa-file-invoice"></i> Invoice Input</h2>
+
+                <div class="upload-zone" id="drop-zone">
+                    <input type="file" id="file-input" accept="image/*" hidden>
+                    <div class="upload-content">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <p>Drag & Drop Invoice Image or <span class="browse-link">Browse</span></p>
+                        <p class="file-name" id="file-name"></p>
+                    </div>
+                </div>
+
+                <div class="textarea-wrapper">
+                    <textarea id="invoice-input" placeholder="OR Paste invoice text here..."></textarea>
+                    <div class="actions">
+                        <button id="analyze-btn" class="primary-btn">
+                            <span class="btn-text">Analyze & Extract</span>
+                            <div class="loader" id="btn-loader"></div>
+                        </button>
+                        <button id="clear-btn" class="secondary-btn">Clear</button>
+                    </div>
+                </div>
+
+                <div class="sample-pills">
+                    <span>Try samples:</span>
+                    <button class="pill" onclick="loadSample('safe')">Safe Invoice</button>
+                    <button class="pill danger" onclick="loadSample('leaky')">Leaky (PII)</button>
+                    <button class="pill critical" onclick="loadSample('poisoned')">Poisoned (Injection)</button>
+                </div>
+            </section>
+
+            <section class="output-section">
+                <!-- Extraction Panel -->
+                <div class="panel list-panel">
+                    <h3><i class="fas fa-code"></i> Extraction Result</h3>
+                    <div class="code-block" id="extraction-output">
+                        <span class="placeholder-text">Result will appear here...</span>
+                    </div>
+                </div>
+
+                <!-- Red Team Report Panel -->
+                <div class="panel report-panel">
+                    <h3><i class="fas fa-user-secret"></i> Red Team Report</h3>
+
+                    <div class="metric-card" id="pii-card">
+                        <div class="metric-header">
+                            <span class="metric-name">PII Exposure</span>
+                            <span class="metric-status safe" id="pii-status">SAFE</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="pii-progress"></div>
+                        </div>
+                        <p class="metric-desc" id="pii-desc">No sensitive PII detected using Presidio/Regex.</p>
+                    </div>
+
+                    <div class="metric-card" id="injection-card">
+                        <div class="metric-header">
+                            <span class="metric-name">Prompt Injection</span>
+                            <span class="metric-status safe" id="injection-status">SAFE</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="injection-progress"></div>
+                        </div>
+                        <p class="metric-desc" id="injection-desc">Model followed instructions correctly.</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+
+</html>

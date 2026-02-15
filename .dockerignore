@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+.git
+.env
+.venv
+venv/
+dist/
+build/
+mlflow.db
+output_*.txt
+*.egg-info
+synthetic_invoices.json
+eval_results.json
