@@ -51,9 +51,14 @@ def extract_invoice_data(invoice_data: Any) -> str:
             json_mode=True,
             model_list=MODEL_FALLBACK_LIST
         )
-        return response_text if response_text else json.dumps({"error": "Failed to generate extraction", "invoice_number": None})
+        if response_text:
+            return response_text
+        else:
+            api_key = os.getenv("GOOGLE_API_KEY")
+            key_status = f"Key present: {api_key[:4]}...{api_key[-4:]}" if api_key else "NO API KEY SET!"
+            return json.dumps({"error": f"Failed to generate extraction. {key_status}. Check API key validity and billing.", "invoice_number": None})
     except Exception as e:
-        return json.dumps({"error": str(e), "invoice_number": None, "total_amount": None})
+        return json.dumps({"error": f"Exception: {str(e)}", "invoice_number": None, "total_amount": None})
 
 if __name__ == "__main__":
     # Simple test
