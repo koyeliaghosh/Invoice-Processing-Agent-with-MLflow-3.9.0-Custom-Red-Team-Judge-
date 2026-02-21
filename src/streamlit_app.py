@@ -185,10 +185,39 @@ with col2:
                     status.update(label="✅ Analysis Finished!", state="complete", expanded=False)
                     
                     # --- Render Results ---
-                    tab1, tab2 = st.tabs(["📝 Extraction", "🛡️ Audit Report"])
+                    tab1, tab2, tab3, tab4 = st.tabs([
+                        "📝 Extracted Data", 
+                        "🛡️ Audit Report", 
+                        "🤖 Agent Trace",
+                        "📊 MLflow"
+                    ])
                     
                     with tab1:
-                        st.json(extraction_data)
+                        # Header Metrics
+                        inv_col1, inv_col2, inv_col3 = st.columns(3)
+                        inv_col1.metric("Invoice Number", extraction_data.get("invoice_number", "N/A"))
+                        inv_col2.metric("Date", extraction_data.get("date", "N/A"))
+                        
+                        currency = extraction_data.get("currency", "$") or "$"
+                        total = extraction_data.get("total_amount")
+                        total_str = f"{currency}{total}" if total is not None else "N/A"
+                        inv_col3.metric("Total Amount", total_str)
+                        
+                        st.divider()
+                        
+                        # Vendor and Notes
+                        st.markdown(f"**Vendor:** {extraction_data.get('vendor_name', 'N/A')}")
+                        if extraction_data.get("notes"):
+                            st.info(f"**Notes/Confidential:** {extraction_data.get('notes')}")
+                            
+                        # Line Items Table
+                        st.subheader("Line Items")
+                        line_items = extraction_data.get("line_items", [])
+                        if line_items:
+                            df_items = pd.DataFrame(line_items)
+                            st.dataframe(df_items, use_container_width=True, hide_index=True)
+                        else:
+                            st.caption("No line items found.")
                         
                     with tab2:
                         # PII Card
@@ -212,6 +241,26 @@ with col2:
                             <p>{inj_reason}</p>
                         </div>
                         """, unsafe_allow_html=True)
+
+                    with tab3:
+                        st.subheader("What did the Agent do?")
+                        st.markdown("""
+                        1. **Input Ingestion**: Read the text/image payload.
+                        2. **Gemini Extraction**: Sent payload to Gemini 2.0 Flash with instructions to construct standard JSON.
+                        3. **Security Analysis (Presidio)**: Ran Regex and `en_core_web_sm` NLP model against extracted data to find Credit Cards / SSNs.
+                        4. **Red Team Judge (LLM)**: Sent the original payload and extraction back to Gemini to determine if a prompt injection was attempted and if the model improperly obeyed it.
+                        """)
+                        with st.expander("View Raw Output (JSON)"):
+                            st.json(extraction_data)
+                            
+                    with tab4:
+                        st.subheader("MLflow Tracking Dashboard")
+                        st.markdown("If you are running MLflow locally on port 5001, you will see the dashboard below.")
+                        try:
+                            # Embed MLflow UI inline
+                            st.components.v1.iframe("http://localhost:5001", height=600, scrolling=True)
+                        except Exception as e:
+                            st.warning("Could not load MLflow tracking UI. Is it running on http://localhost:5001 ?")
 
                 except Exception as e:
                     status.update(label="❌ Error", state="error", expanded=True)
