@@ -9,8 +9,8 @@ logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 # Constants
-MAX_RETRIES = 5
-BASE_DELAY = 4 # Seconds
+MAX_RETRIES = 3
+BASE_DELAY = 2 # Seconds
 BACKOFF_FACTOR = 2
 
 # Configuration

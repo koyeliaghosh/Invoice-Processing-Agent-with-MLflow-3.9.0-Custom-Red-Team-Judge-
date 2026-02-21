@@ -121,36 +121,49 @@ with col2:
         if not invoice_content:
             st.warning("Please provide input first.")
         else:
+            # Cancel mechanism using session state
+            if 'cancel_analysis' not in st.session_state:
+                st.session_state.cancel_analysis = False
+            
+            cancel_btn = st.button("🛑 Cancel Analysis", type="secondary", use_container_width=True) 
+            if cancel_btn:
+                st.session_state.cancel_analysis = True
+                st.warning("Analysis cancelled by user.")
+                st.stop()
+
             with st.status("Analyzing...", expanded=True) as status:
                 try:
-                    # 1. Extraction
+                    # 1. Extraction (with timeout guard)
                     status.write("🔍 Step 1/3: Extracting data with Gemini...")
                     start_time = time.time()
                     extraction_json_str = extract_invoice_data(invoice_content)
-                    st.toast(f"Extraction took {round(time.time() - start_time, 2)}s")
+                    elapsed = round(time.time() - start_time, 2)
+                    st.toast(f"Extraction took {elapsed}s")
                     
                     # Safe Parse
                     try:
                         if '"error":' in extraction_json_str:
                              err = json.loads(extraction_json_str)
+                             status.update(label="❌ Extraction Failed", state="error", expanded=True)
                              st.error(f"Extraction Failed: {err.get('error')}")
                              st.stop()
                         extraction_data = json.loads(extraction_json_str)
                     except:
+                        status.update(label="❌ Parse Error", state="error", expanded=True)
                         st.error("Failed to parse AI response.")
                         st.text(extraction_json_str)
                         st.stop()
                     
-                    status.write("✅ Data extracted successfully.")
+                    status.write(f"✅ Data extracted successfully ({elapsed}s)")
 
-                    # 2. Red Team Audit
+                    # 2. Red Team Audit - PII
                     status.write("🛡️ Step 2/3: Running PII Detection...")
                     
                     # Prepare dataframe for judges
                     eval_df = pd.DataFrame([{
                         'prediction': extraction_json_str, 
-                        'inputs': invoice_content, 
-                        'input': invoice_content
+                        'inputs': str(invoice_content) if not isinstance(invoice_content, str) else invoice_content, 
+                        'input': str(invoice_content) if not isinstance(invoice_content, str) else invoice_content
                     }])
                     
                     # Run PII Judge
@@ -159,14 +172,14 @@ with col2:
                     pii_reason = pii_res.justifications[0]
                     status.write(f"✅ PII Check Complete (Score: {pii_score})")
                     
+                    # 3. Injection Judge
                     status.write("💉 Step 3/3: Running Injection Analysis (LLM Judge)...")
-                    # Run Injection Judge
                     inj_res = injection_metric.eval_fn(eval_df, {})
                     inj_score = inj_res.scores[0]
                     inj_reason = inj_res.justifications[0]
                     status.write(f"✅ Injection Check Complete (Score: {inj_score})")
                     
-                    status.update(label="Analysis Finished!", state="complete", expanded=False)
+                    status.update(label="✅ Analysis Finished!", state="complete", expanded=False)
                     
                     # --- Render Results ---
                     tab1, tab2 = st.tabs(["📝 Extraction", "🛡️ Audit Report"])
@@ -198,6 +211,7 @@ with col2:
                         """, unsafe_allow_html=True)
 
                 except Exception as e:
+                    status.update(label="❌ Error", state="error", expanded=True)
                     st.error(f"System Error: {str(e)}")
     else:
         st.info("Results will appear here after analysis.")
