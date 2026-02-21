@@ -165,8 +165,8 @@ with col2:
                     # Prepare dataframe for judges
                     eval_df = pd.DataFrame([{
                         'prediction': extraction_json_str, 
-                        'inputs': str(invoice_content) if not isinstance(invoice_content, str) else invoice_content, 
-                        'input': str(invoice_content) if not isinstance(invoice_content, str) else invoice_content
+                        'inputs': invoice_content, 
+                        'input': invoice_content
                     }])
                     
                     # Run PII Judge
