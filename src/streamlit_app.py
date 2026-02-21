@@ -267,12 +267,29 @@ with col2:
                             
                     with tab4:
                         st.subheader("MLflow Tracking Dashboard")
-                        st.markdown("If you are running MLflow locally on port 5001, you will see the dashboard below.")
+                        st.markdown("Here are the security audit logs automatically tracked by MLflow for this session:")
+                        
                         try:
-                            # Embed MLflow UI inline
-                            st.components.v1.iframe("http://localhost:5001", height=600, scrolling=True)
+                            # Fetch runs natively via MLflow API instead of an iframe
+                            experiment = mlflow.get_experiment_by_name("InvoiceGuard_Security_Audits")
+                            if experiment:
+                                runs_df = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
+                                if not runs_df.empty:
+                                    # Clean up the dataframe for display
+                                    display_df = runs_df[['run_id', 'status', 'start_time', 'metrics.pii_exposure_score', 'metrics.prompt_injection_score', 'params.input_type']]
+                                    display_df.columns = ['Run ID', 'Status', 'Start Time', 'PII Risk Score', 'Injection Risk Score', 'Input Type']
+                                    
+                                    # Format time
+                                    display_df['Start Time'] = pd.to_datetime(display_df['Start Time']).dt.strftime('%Y-%m-%d %H:%M:%S')
+                                    
+                                    st.dataframe(display_df, use_container_width=True, hide_index=True)
+                                else:
+                                    st.info("No runs logged yet. Analyze an invoice to see it here!")
+                            else:
+                                st.info("Experiment not found. It will be created on your first analysis.")
+                                
                         except Exception as e:
-                            st.warning("Could not load MLflow tracking UI. Is it running on http://localhost:5001 ?")
+                            st.warning(f"Could not load MLflow tracking data: {e}")
 
                 except Exception as e:
                     status.update(label="❌ Error", state="error", expanded=True)
