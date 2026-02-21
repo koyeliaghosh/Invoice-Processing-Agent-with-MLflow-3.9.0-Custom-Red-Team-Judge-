@@ -4,8 +4,11 @@ import json
 import os
 import PIL.Image
 import sys
-import os
 import time
+from dotenv import load_dotenv
+
+# Load environment variables FIRST (before any src imports that need API keys)
+load_dotenv()
 
 # Add the project root to sys.path so we can import from src
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
