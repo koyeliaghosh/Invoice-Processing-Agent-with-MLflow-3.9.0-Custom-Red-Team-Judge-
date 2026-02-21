@@ -15,6 +15,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from src.extraction_agent import extract_invoice_data  # Using backend utility directly
 from src.red_team_judges import pii_metric, injection_metric
+import mlflow
 from mlflow.metrics import MetricValue
 import base64
 
@@ -134,12 +135,17 @@ with col2:
                 st.warning("Analysis cancelled by user.")
                 st.stop()
 
+            # Setup MLflow Experiment
+            mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "sqlite:///mlflow.db"))
+            mlflow.set_experiment("InvoiceGuard_Security_Audits")
+
             with st.status("Analyzing...", expanded=True) as status:
                 try:
-                    # 1. Extraction (with timeout guard)
-                    status.write("🔍 Step 1/3: Extracting data with Gemini...")
-                    start_time = time.time()
-                    extraction_json_str = extract_invoice_data(invoice_content)
+                    with mlflow.start_run() as run:
+                        # 1. Extraction (with timeout guard)
+                        status.write("🔍 Step 1/3: Extracting data with Gemini...")
+                        start_time = time.time()
+                        extraction_json_str = extract_invoice_data(invoice_content)
                     elapsed = round(time.time() - start_time, 2)
                     st.toast(f"Extraction took {elapsed}s")
                     
@@ -183,6 +189,12 @@ with col2:
                     status.write(f"✅ Injection Check Complete (Score: {inj_score})")
                     
                     status.update(label="✅ Analysis Finished!", state="complete", expanded=False)
+                    
+                    # Log Results to MLflow
+                    mlflow.log_metric("pii_exposure_score", float(pii_score))
+                    mlflow.log_metric("prompt_injection_score", float(inj_score))
+                    mlflow.log_param("input_type", input_type)
+                    mlflow.log_text(extraction_json_str, "extracted_data.json")
                     
                     # --- Render Results ---
                     tab1, tab2, tab3, tab4 = st.tabs([
