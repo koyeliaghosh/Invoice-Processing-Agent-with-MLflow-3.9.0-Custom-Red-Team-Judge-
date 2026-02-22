@@ -27,28 +27,34 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for modern look (Cybersecurity / Dark Mode Engine)
+# Custom CSS for modern look (Light Mode / Professional Engine)
 st.markdown("""
 <style>
     :root {
         --mlflow-blue: #0194E2;
-        --cyber-red: #FF3366;
-        --neon-green: #39FF14;
-        --dark-bg: #0B0F19;
-        --card-bg: rgba(20, 25, 40, 0.7);
+        --cyber-red: #E11D48;
+        --neon-green: #16A34A;
+        --light-bg: #F8FAFC;
+        --card-bg: #FFFFFF;
+        --text-color: #1E293B;
     }
     
+    /* Force Streamlit background */
     .stApp {
-        background-color: var(--dark-bg);
+        background-color: var(--light-bg);
         background-image: 
             radial-gradient(circle at 15% 50%, rgba(1, 148, 226, 0.05), transparent 25%),
-            radial-gradient(circle at 85% 30%, rgba(255, 51, 102, 0.05), transparent 25%);
+            radial-gradient(circle at 85% 30%, rgba(225, 29, 72, 0.03), transparent 25%);
     }
 
-    h1, h2, h3 {
+    h1, h2, h3, p, span {
         font-family: 'Inter', sans-serif;
+    }
+    
+    h1, h2, h3 {
         font-weight: 700 !important;
         letter-spacing: -0.5px;
+        color: var(--text-color);
     }
     
     .main-title {
@@ -59,46 +65,46 @@ st.markdown("""
         margin-bottom: 0px !important;
     }
 
+    /* Primary button styling */
     div.stButton > button:first-child {
         background: linear-gradient(135deg, #0194E2 0%, #0077B6 100%);
-        color: white;
+        color: white !important;
         border-radius: 8px;
         padding: 0.6rem 2rem;
-        border: 1px solid rgba(255,255,255,0.1);
+        border: none;
         font-weight: 600;
         transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(1, 148, 226, 0.3);
+        box-shadow: 0 4px 10px rgba(1, 148, 226, 0.2);
     }
     div.stButton > button:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(1, 148, 226, 0.5);
+        box-shadow: 0 6px 15px rgba(1, 148, 226, 0.35);
     }
     
-    /* Modern Glassmorphism Cards */
+    /* Modern Light Cards */
     .metric-card {
         padding: 1.5rem;
         border-radius: 12px;
-        color: white;
+        color: var(--text-color);
+        background-color: var(--card-bg);
         text-align: center;
         margin-bottom: 1.5rem;
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         transition: all 0.3s ease;
     }
     
     .safe { 
-        background: rgba(57, 255, 20, 0.05); 
-        border: 1px solid rgba(57, 255, 20, 0.2);
-        box-shadow: inset 0 0 20px rgba(57, 255, 20, 0.02);
+        border-top: 4px solid var(--neon-green);
+        background: rgba(22, 163, 74, 0.03); 
     }
-    .safe h1 { color: var(--neon-green); text-shadow: 0 0 10px rgba(57,255,20,0.3); }
+    .safe h1 { color: var(--neon-green); }
     
     .danger { 
-        background: rgba(255, 51, 102, 0.05); 
-        border: 1px solid rgba(255, 51, 102, 0.3); 
-        box-shadow: inset 0 0 20px rgba(255, 51, 102, 0.05);
+        border-top: 4px solid var(--cyber-red);
+        background: rgba(225, 29, 72, 0.03); 
     }
-    .danger h1 { color: var(--cyber-red); text-shadow: 0 0 10px rgba(255,51,102,0.5); }
+    .danger h1 { color: var(--cyber-red); }
     
     .stTabs [data-baseweb="tab-list"] {
         gap: 8px;
@@ -106,8 +112,9 @@ st.markdown("""
     .stTabs [data-baseweb="tab"] {
         background: var(--card-bg);
         border-radius: 4px 4px 0 0;
-        border: 1px solid rgba(255,255,255,0.05);
+        border: 1px solid #E2E8F0;
         border-bottom: none;
+        box-shadow: 0 -2px 5px rgba(0,0,0,0.02);
     }
 </style>
 """, unsafe_allow_html=True)
@@ -269,7 +276,7 @@ with col2:
                         pii_status = "CRITICAL RISK (Score: 1)" if pii_score > 0 else "SAFE (Score: 0)"
                         st.markdown(f"""
                         <div class="metric-card {pii_class}">
-                            <p style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px; color: rgba(255,255,255,0.7); font-size: 0.8rem; margin: 0;">Judge Evaluator: Custom NLP Presidio Matrix</p>
+                            <p style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px; color: #64748B; font-size: 0.8rem; margin: 0;">Judge Evaluator: Custom NLP Presidio Matrix</p>
                             <h3>PII Exposure Metric</h3>
                             <h1>{pii_status}</h1>
                             <p>{pii_reason}</p>
@@ -281,7 +288,7 @@ with col2:
                         inj_status = "COMPROMISED (Score: 1)" if inj_score > 0 else "SECURE (Score: 0)"
                         st.markdown(f"""
                         <div class="metric-card {inj_class}">
-                            <p style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px; color: rgba(255,255,255,0.7); font-size: 0.8rem; margin: 0;">Judge Evaluator: LLM-as-a-Judge (Gemini 2.0 Flash)</p>
+                            <p style="text-transform: uppercase; font-weight: bold; letter-spacing: 1px; color: #64748B; font-size: 0.8rem; margin: 0;">Judge Evaluator: LLM-as-a-Judge (Gemini 2.0 Flash)</p>
                             <h3>Prompt Injection Metric</h3>
                             <h1>{inj_status}</h1>
                             <p>{inj_reason}</p>
