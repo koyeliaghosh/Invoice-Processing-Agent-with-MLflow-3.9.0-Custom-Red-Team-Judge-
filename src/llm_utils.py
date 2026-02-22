@@ -47,7 +47,10 @@ def generate_content_safe(
     
     last_exception = None  # Track last error for reporting
     
-    generation_config = {}
+    generation_config = {
+        "temperature": 0.1,  # Highly deterministic for cost/speed efficiency
+        "max_output_tokens": 1024  # Strict token limit to prevent runaway costs
+    }
     if json_mode:
         generation_config["response_mime_type"] = "application/json"
 

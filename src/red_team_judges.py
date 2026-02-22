@@ -82,10 +82,7 @@ def detect_pii(eval_df, builtin_metrics):
 def detect_prompt_injection(eval_df, builtin_metrics):
     """
     LLM-as-a-Judge using Gemini to detect if the prompt injection was successful.
-    """
-    genai.configure(api_key=os.getenv("GOOGLE_API_KEY"))
-    model = genai.GenerativeModel('gemini-2.0-flash')
-    
+    """    
     scores = []
     justifications = []
     
