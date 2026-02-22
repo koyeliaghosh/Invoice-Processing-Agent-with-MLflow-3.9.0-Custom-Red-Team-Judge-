@@ -139,11 +139,14 @@ with st.sidebar:
 st.markdown('<h1 class="main-title">MLflow Red Team Evaluator 🔴</h1>', unsafe_allow_html=True)
 st.markdown("Upload a payload to evaluate the LLM agent against our custom MLflow security metrics.")
 
-col1, col2 = st.columns([1, 1], gap="large")
+tab1, tab2, tab3 = st.tabs([
+    "📂 Upload & Confirmation", 
+    "🛡️ MLflow Red Team", 
+    "📊 MLflow Dashboard"
+])
 
-# Input Column
-with col1:
-    st.subheader("1. Attack Payload 📡")
+with tab1:
+    st.subheader("Attack Payload 📡")
     input_type = st.radio("Payload Delivery Method:", ["Raw Text", "Document Upload"], horizontal=True)
     
     invoice_content = None
@@ -183,10 +186,6 @@ with col1:
 
     analyze_btn = st.button("▶️ RUN MLFLOW EVALUATION SUITE", type="primary", use_container_width=True)
 
-# Analysis Column
-with col2:
-    st.subheader("2. Evaluation Metrics 📊")
-    
     if analyze_btn:
         if not invoice_content:
             st.warning("Please provide input first.")
@@ -262,15 +261,39 @@ with col2:
                     mlflow.log_param("input_type", input_type)
                     mlflow.log_text(extraction_json_str, "extracted_data.json")
                     
-                    # --- Render Results ---
-                    tab1, tab2, tab3, tab4 = st.tabs([
-                        "🛡️ MLflow Red Team Metrics", 
-                        "📊 MLflow Database Archive",
-                        "🤖 Agent Target Output", 
-                        "⚙️ Evaluation Trace"
-                    ])
+                    st.divider()
+                    st.subheader("Agent Target Output (Confirmation)")
                     
-                    with tab1:
+                    # Header Metrics
+                    inv_col1, inv_col2, inv_col3 = st.columns(3)
+                    inv_col1.metric("Invoice Number", extraction_data.get("invoice_number", "N/A"))
+                    inv_col2.metric("Date", extraction_data.get("date", "N/A"))
+                    
+                    currency = extraction_data.get("currency", "$") or "$"
+                    total = extraction_data.get("total_amount")
+                    total_str = f"{currency}{total}" if total is not None else "N/A"
+                    inv_col3.metric("Total Amount", total_str)
+                    
+                    st.divider()
+                    
+                    # Vendor and Notes
+                    st.markdown(f"**Vendor:** {extraction_data.get('vendor_name', 'N/A')}")
+                    if extraction_data.get("notes"):
+                        st.info(f"**Notes/Confidential:** {extraction_data.get('notes')}")
+                        
+                    # Line Items Table
+                    st.subheader("Line Items")
+                    line_items = extraction_data.get("line_items", [])
+                    if line_items:
+                        df_items = pd.DataFrame(line_items)
+                        st.dataframe(df_items, use_container_width=True, hide_index=True)
+                    else:
+                        st.caption("No line items found.")
+                        
+                    st.info("👉 **Target Process Complete.** Now click **[2️⃣ MLflow Red Team]** tab above to view the security audit.")
+                        
+                    with tab2:
+                        st.subheader("🛡️ Red Team Evaluation Metrics")
                         # PII Card
                         pii_class = "danger" if pii_score > 0 else "safe"
                         pii_status = "CRITICAL RISK (Score: 1)" if pii_score > 0 else "SAFE (Score: 0)"
@@ -294,35 +317,8 @@ with col2:
                             <p>{inj_reason}</p>
                         </div>
                         """, unsafe_allow_html=True)
-
-                    with tab3:
-                        # Header Metrics
-                        inv_col1, inv_col2, inv_col3 = st.columns(3)
-                        inv_col1.metric("Invoice Number", extraction_data.get("invoice_number", "N/A"))
-                        inv_col2.metric("Date", extraction_data.get("date", "N/A"))
-                        
-                        currency = extraction_data.get("currency", "$") or "$"
-                        total = extraction_data.get("total_amount")
-                        total_str = f"{currency}{total}" if total is not None else "N/A"
-                        inv_col3.metric("Total Amount", total_str)
                         
                         st.divider()
-                        
-                        # Vendor and Notes
-                        st.markdown(f"**Vendor:** {extraction_data.get('vendor_name', 'N/A')}")
-                        if extraction_data.get("notes"):
-                            st.info(f"**Notes/Confidential:** {extraction_data.get('notes')}")
-                            
-                        # Line Items Table
-                        st.subheader("Line Items")
-                        line_items = extraction_data.get("line_items", [])
-                        if line_items:
-                            df_items = pd.DataFrame(line_items)
-                            st.dataframe(df_items, use_container_width=True, hide_index=True)
-                        else:
-                            st.caption("No line items found.")
-                            
-                    with tab4:
                         st.subheader("Evaluation Pipeline Trace")
                         st.markdown("""
                         This explicitly maps to the execution of `mlflow.metrics.make_metric`:
@@ -334,34 +330,32 @@ with col2:
                         with st.expander("View Target Agent Raw Output"):
                             st.json(extraction_data)
                             
-                    with tab2:
-                        st.subheader("MLflow Runs Database")
-                        st.markdown("Metrics natively fetched from the background MLflow SQLite database via `mlflow.search_runs()`:")
-                        
-                        try:
-                            # Fetch runs natively via MLflow API instead of an iframe
-                            experiment = mlflow.get_experiment_by_name("InvoiceGuard_Security_Audits")
-                            if experiment:
-                                runs_df = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
-                                if not runs_df.empty:
-                                    # Clean up the dataframe for display
-                                    display_df = runs_df[['run_id', 'status', 'start_time', 'metrics.pii_exposure_score', 'metrics.prompt_injection_score', 'params.input_type']]
-                                    display_df.columns = ['Run ID', 'Status', 'Start Time', 'PII Risk Score', 'Injection Risk Score', 'Input Type']
-                                    
-                                    # Format time
-                                    display_df['Start Time'] = pd.to_datetime(display_df['Start Time']).dt.strftime('%Y-%m-%d %H:%M:%S')
-                                    
-                                    st.dataframe(display_df, use_container_width=True, hide_index=True)
-                                else:
-                                    st.info("No runs logged yet. Analyze an invoice to see it here!")
-                            else:
-                                st.info("Experiment not found. It will be created on your first analysis.")
-                                
-                        except Exception as e:
-                            st.warning(f"Could not load MLflow tracking data: {e}")
-
                 except Exception as e:
                     status.update(label="❌ Error", state="error", expanded=True)
                     st.error(f"System Error: {str(e)}")
-    else:
-        st.info("Results will appear here after analysis.")
+                    
+with tab3:
+    st.subheader("MLflow Runs Database")
+    st.markdown("Metrics natively fetched from the background MLflow SQLite database via `mlflow.search_runs()`:")
+    
+    try:
+        # Fetch runs natively via MLflow API instead of an iframe
+        experiment = mlflow.get_experiment_by_name("InvoiceGuard_Security_Audits")
+        if experiment:
+            runs_df = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
+            if not runs_df.empty:
+                # Clean up the dataframe for display
+                display_df = runs_df[['run_id', 'status', 'start_time', 'metrics.pii_exposure_score', 'metrics.prompt_injection_score', 'params.input_type']]
+                display_df.columns = ['Run ID', 'Status', 'Start Time', 'PII Risk Score', 'Injection Risk Score', 'Input Type']
+                
+                # Format time
+                display_df['Start Time'] = pd.to_datetime(display_df['Start Time']).dt.strftime('%Y-%m-%d %H:%M:%S')
+                
+                st.dataframe(display_df, use_container_width=True, hide_index=True)
+            else:
+                st.info("No runs logged yet. Analyze an invoice to see it here!")
+        else:
+            st.info("Experiment not found. It will be created on your first analysis.")
+            
+    except Exception as e:
+        st.warning(f"Could not load MLflow tracking data: {e}")
