@@ -106,15 +106,76 @@ st.markdown("""
     }
     .danger h1 { color: var(--cyber-red); }
     
+    /* Modern Button-like Tabs (Support for new Streamlit versions) */
+    div[data-testid="stTabs"] > div:first-child {
+        gap: 16px;
+        background-color: transparent;
+        padding-bottom: 20px;
+        border-bottom: none !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] {
+        background: var(--card-bg) !important;
+        border-radius: 12px !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
+        padding: 12px 28px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        height: auto !important;
+        min-height: 50px !important;
+        color: #64748B !important;
+        margin-right: 8px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] p {
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+        margin: 0 !important;
+        color: inherit !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"]:hover {
+        border-color: var(--mlflow-blue) !important;
+        box-shadow: 0 8px 20px rgba(1, 148, 226, 0.15) !important;
+        transform: translateY(-3px) !important;
+        color: var(--mlflow-blue) !important;
+        background: #F0F9FF !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] {
+        background: linear-gradient(135deg, var(--mlflow-blue) 0%, #0077B6 100%) !important;
+        border: none !important;
+        box-shadow: 0 8px 20px rgba(1, 148, 226, 0.35) !important;
+        color: white !important;
+        transform: translateY(-3px) !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"][aria-selected="true"] p {
+        color: white !important;
+    }
+    div[data-testid="stTabs"] button[role="tab"] div[data-testid="stTabIndicator"],
+    div[data-testid="stTabs"] button[role="tab"] span[data-testid="stTabsIndicator"] {
+        display: none !important;
+    }
+    
+    /* Fallback for older Streamlit versions just in case */
     .stTabs [data-baseweb="tab-list"] {
-        gap: 8px;
+        gap: 16px;
+        padding-bottom: 20px;
     }
     .stTabs [data-baseweb="tab"] {
-        background: var(--card-bg);
-        border-radius: 4px 4px 0 0;
-        border: 1px solid #E2E8F0;
-        border-bottom: none;
-        box-shadow: 0 -2px 5px rgba(0,0,0,0.02);
+        background: var(--card-bg) !important;
+        border-radius: 12px !important;
+        border: 1px solid #E2E8F0 !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
+        padding: 12px 28px !important;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    }
+    .stTabs [data-baseweb="tab"]:hover {
+        transform: translateY(-3px) !important;
+        border-color: var(--mlflow-blue) !important;
+    }
+    .stTabs [aria-selected="true"] {
+        background: linear-gradient(135deg, var(--mlflow-blue) 0%, #0077B6 100%) !important;
+        color: white !important;
     }
 </style>
 """, unsafe_allow_html=True)
